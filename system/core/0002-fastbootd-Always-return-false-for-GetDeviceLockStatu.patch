@@ -1,28 +1,52 @@
-From db3a196c2e0f2f215d9a84f24de4b471a7aac1e4 Mon Sep 17 00:00:00 2001
+From aaec13cc0169aac64a988ba6d0936bad4c39592b Mon Sep 17 00:00:00 2001
 From: Mashopy <eliasgheeraert@gmail.com>
 Date: Sat, 23 Aug 2025 07:15:29 +0200
-Subject: [PATCH] fastbootd: Always return false for GetDeviceLockStatus()
+Subject: [PATCH 2/2] fastbootd: Always return false for GetDeviceLockStatus()
 
 fenrir lks can still flash stuff through bootloader and fastboot
 
 Change-Id: Ica59dab533555af1d12c62b9cc71de55d5b51146
----
- fastboot/device/utility.cpp | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
+[Shirayuki39]: Make it configurable via soong config
+
+Signed-off-by: Shirayuki39 <lorddemecrius83@proton.me>
+---
+ fastboot/Android.bp         | 5 +++++
+ fastboot/device/utility.cpp | 4 ++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/fastboot/Android.bp b/fastboot/Android.bp
+index d0938eefa..5095e3356 100644
+--- a/fastboot/Android.bp
++++ b/fastboot/Android.bp
+@@ -148,6 +148,11 @@ cc_binary {
+         },
+     },
+ 
++    cppflags: select(soong_config_variable("fastbootd", "bypass_lock_state"), {
++        true: ["-DFASTBOOT_BYPASS_LOCK_STATE"],
++        default: [],
++    }),
++
+     srcs: [
+         "device/commands.cpp",
+         "device/fastboot_device.cpp",
 diff --git a/fastboot/device/utility.cpp b/fastboot/device/utility.cpp
-index e12ee6479..0652d9399 100644
+index 058e5db6f..336f3519c 100644
 --- a/fastboot/device/utility.cpp
 +++ b/fastboot/device/utility.cpp
-@@ -195,7 +195,7 @@ std::vector<std::string> ListPartitions(FastbootDevice* device) {
+@@ -181,7 +181,11 @@ std::vector<std::string> ListPartitions(FastbootDevice* device) {
  }
  
  bool GetDeviceLockStatus() {
--    return android::base::GetProperty("ro.boot.verifiedbootstate", "") != "orange";
++#ifdef FASTBOOT_BYPASS_LOCK_STATE
 +    return false;
++#else
+     return android::base::GetProperty("ro.boot.verifiedbootstate", "") != "orange";
++#endif
  }
  
  bool UpdateAllPartitionMetadata(FastbootDevice* device, const std::string& super_name,
 -- 
-2.39.5
+2.53.0
 
